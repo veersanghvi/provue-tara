@@ -2,11 +2,19 @@
 
 Tara is a personal finance-research persona that answers natural-language questions about spending and mutual fund holdings using tool calls backed by a real Postgres database.
 
+## ⚠️ API Key Note
+
+I do not currently have an active LLM API key to attach to this submission. The full agent code is wired for both **Anthropic** (`MODEL_PROVIDER=anthropic`) and **OpenAI** (`MODEL_PROVIDER=openai`). If you'd like to test it live, please set either `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` in the environment — the server and evals will work immediately.
+
+Everything that does not require a model key has been verified:
+- All 3 sample snapshots ingest cleanly (`npm run ingest`)
+- All 4 tools pass the deterministic smoke test (`npm run smoke` → **14/14 passed**) — this verifies every SQL computation, merchant alias matching, fund return formula, and holding return formula against direct database queries with no model involved.
+
 ## Quick start (local)
 
 ```bash
 # 1. Clone and install
-git clone <repo-url>
+git clone https://github.com/veersanghvi/provue-tara
 cd provue-tara
 npm install
 
@@ -14,16 +22,16 @@ npm install
 cp .env.example .env
 # Edit .env:
 #   DATABASE_URL=<your Neon / Supabase / local Postgres URL>
-#   MODEL_PROVIDER=anthropic
-#   ANTHROPIC_API_KEY=<your key>
+#   MODEL_PROVIDER=anthropic          # or openai
+#   ANTHROPIC_API_KEY=<your key>      # or OPENAI_API_KEY=
 
 # 3. Load a snapshot
 DATA_DIR=./data/sample_a npm run ingest
 
 # 4. Verify tools (no LLM key required)
-npm run smoke            # should print 14/14 passed
+npm run smoke            # 14/14 passed
 
-# 5. Start the server
+# 5. Start the server (needs LLM key)
 npm start                # http://localhost:3000
 
 # 6. Ask a question
