@@ -12,7 +12,7 @@
     "smoke": "tsx scripts/smoke.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js"
+    "start": "npm run build && node dist/server.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
