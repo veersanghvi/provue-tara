@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: provue-tara
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false   # Set this in Render dashboard → Environment
+      - key: MODEL_PROVIDER
+        value: anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false   # Set this in Render dashboard → Environment
+      - key: PORT
+        value: "3000"
