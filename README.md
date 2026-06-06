@@ -97,7 +97,7 @@ For a local install: [postgresql.org/download](https://www.postgresql.org/downlo
    ```
 5. Hit `POST <render-url>/ask` to verify.
 
-**Deployed URL:** `https://provue-tara.onrender.com` *(update once deployed)*
+**Deployed URL:** `https://provue-tara-production-0543.up.railway.app`
 
 **Known limitations:**
 - Free Render tier cold-starts after ~15 min of inactivity (~30 s first-request latency).
