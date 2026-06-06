@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 
 export interface ToolCallRecord {
   tool: string;
-  input: any; // sanitized (tool inputs only — never secrets)
+  input: any;
   tables_read: string[];
   latency_ms: number;
   ok: boolean;
@@ -25,11 +25,8 @@ export function currentTrace(): TraceContext | undefined {
   return storage.getStore();
 }
 
-/**
- * Wrap a tool's work so every invocation is timed and recorded into the active
- * request trace (if any). Tools call this; it is a no-op outside a request
- * (e.g. in the deterministic smoke test), so the same code path is reused.
- */
+// Wraps a tool call to time it and record it in the current request trace.
+// Works fine outside a request context too (e.g. smoke tests) - just a no-op.
 export async function traceTool<T>(
   tool: string,
   tablesRead: string[],

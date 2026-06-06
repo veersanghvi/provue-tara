@@ -1,4 +1,4 @@
--- Provue Tara — Postgres schema.
+-- Provue Tara - Postgres schema.
 -- Applied idempotently by scripts/ingest.ts before every load.
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;

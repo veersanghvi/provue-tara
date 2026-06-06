@@ -220,7 +220,7 @@ export const queryTransactionsTool = createTool({
     "Aggregate with group_by (merchant|category|month|none) and metric (net_spend|gross_spend|count|avg), " +
     "optionally top_n. group_by='none' returns an overall summary plus the top transactions by amount " +
     "(use top_n=1 for the single biggest expense). All math is computed in SQL. " +
-    "Returns no_data=true when nothing matches — never invent numbers.",
+    "Returns no_data=true when nothing matches - never invent numbers.",
   inputSchema: queryTransactionsInput,
   execute: async ({ context }) => runQueryTransactions(context as QueryTransactionsInput),
 });

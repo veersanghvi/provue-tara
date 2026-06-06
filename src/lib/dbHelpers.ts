@@ -1,16 +1,14 @@
 import { queryOne } from "../db/pool.js";
 import { normalizeQueryTerm } from "./normalize.js";
 
-/**
- * Anchor dates derived from the data itself. The dataset is historical, so
- * "today"/"last month" are resolved against these, not wall-clock time.
- */
 export interface AnchorDates {
-  latestTxnDate: string | null; // YYYY-MM-DD
-  latestNavDate: string | null; // YYYY-MM-DD
-  txnYear: number; // year of latest txn, used as default year for bare month names
+  latestTxnDate: string | null;
+  latestNavDate: string | null;
+  txnYear: number;
 }
 
+// Pull the latest dates from the DB so relative terms ("last month", "today")
+// resolve against the actual data, not the current date.
 export async function getAnchorDates(): Promise<AnchorDates> {
   const row = await queryOne<{ latest_txn: string | null; latest_nav: string | null }>(
     `SELECT (SELECT max(txn_date) FROM transactions) AS latest_txn,
@@ -22,15 +20,8 @@ export async function getAnchorDates(): Promise<AnchorDates> {
   return { latestTxnDate, latestNavDate, txnYear };
 }
 
-/**
- * Build a SQL fragment + params that match a merchant search term broadly:
- *   - exact normalized brand anchor (collapses Swiggy / SWIGGY*ORDER / ...)
- *   - raw substring (ILIKE) for partial typed names
- *   - trigram similarity for minor spelling variants
- *
- * `startIdx` is the next positional placeholder number to use.
- * Returns { clause, params } where clause is wrapped in parentheses.
- */
+// Builds a SQL clause that matches a merchant broadly:
+// exact anchor match + raw substring + trigram similarity fallback
 export function merchantClause(
   term: string,
   startIdx: number

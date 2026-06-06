@@ -119,7 +119,7 @@ export const fundReturnTool = createTool({
     "Compute a fund's PERIOD RETURN between two dates from its NAV history (market data, independent " +
     "of what the user owns). Pass a fund name/id for one fund, or all=true (or omit fund) to rank every " +
     "fund and report the best/worst spread. Uses the nearest NAV on or before each date. " +
-    "This is NOT the user's realised return on a holding — use holding_return for that.",
+    "This is NOT the user's realised return on a holding - use holding_return for that.",
   inputSchema: fundReturnInput,
   execute: async ({ context }) => runFundReturn(context as FundReturnInput),
 });

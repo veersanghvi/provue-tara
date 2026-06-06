@@ -138,7 +138,7 @@ export const holdingReturnTool = createTool({
     "Returns per-holding breakdown (cost, current value, absolute + % return) and portfolio totals. " +
     "Also returns the same fund's period return over the holding window for side-by-side comparison. " +
     "Pass fund= to query one holding, or omit for the full portfolio. " +
-    "This is NOT the fund's market period return between arbitrary dates — use fund_return for that.",
+    "This is NOT the fund's market period return between arbitrary dates - use fund_return for that.",
   inputSchema: holdingReturnInput,
   execute: async ({ context }) => runHoldingReturn(context as HoldingReturnInput),
 });

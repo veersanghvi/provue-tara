@@ -120,7 +120,7 @@ async function main() {
     // 5. holdings (warn, don't crash, on orphan fund_id)
     const validHoldings = holdings.filter((h) => {
       if (!fundIds.has(h.fund_id)) {
-        console.warn(`[ingest] WARNING: holding references unknown fund_id "${h.fund_id}" — skipped`);
+        console.warn(`[ingest] WARNING: holding references unknown fund_id "${h.fund_id}" - skipped`);
         return false;
       }
       return true;

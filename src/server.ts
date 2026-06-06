@@ -9,19 +9,17 @@ import { fileURLToPath } from "node:url";
 import express, { type Request, type Response, type NextFunction } from "express";
 import { pool, query } from "./db/pool.js";
 import { createTaraAgent } from "./agent.js";
-import { runWithTrace, currentTrace, type TraceContext } from "./lib/trace.js";
+import { runWithTrace, type TraceContext } from "./lib/trace.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOGS_DIR = join(__dirname, "../logs");
 mkdirSync(LOGS_DIR, { recursive: true });
 
-// Validate required env at startup.
 const PORT = Number(process.env.PORT ?? 3000);
 
 const app = express();
 app.use(express.json());
 
-// ── Health ────────────────────────────────────────────────────────────────────
 app.get("/health", async (_req: Request, res: Response) => {
   try {
     await pool.query("SELECT 1");
@@ -31,7 +29,6 @@ app.get("/health", async (_req: Request, res: Response) => {
   }
 });
 
-// ── POST /ask ─────────────────────────────────────────────────────────────────
 app.post("/ask", async (req: Request, res: Response, next: NextFunction) => {
   const startMs = Date.now();
   const requestId = randomUUID();
@@ -50,7 +47,6 @@ app.post("/ask", async (req: Request, res: Response, next: NextFunction) => {
 
   try {
     const agent = createTaraAgent();
-
     const answer = await runWithTrace(traceCtx, async () => {
       const result = await agent.generate(question.trim());
       return result.text;
@@ -58,25 +54,21 @@ app.post("/ask", async (req: Request, res: Response, next: NextFunction) => {
 
     const latencyMs = Date.now() - startMs;
     await persistTrace(traceCtx, latencyMs, "success", null);
-
     res.json({ answer });
   } catch (err: any) {
     const latencyMs = Date.now() - startMs;
-    const errorMsg = err?.message ?? String(err);
-    await persistTrace(traceCtx, latencyMs, "error", errorMsg);
+    await persistTrace(traceCtx, latencyMs, "error", err?.message ?? String(err));
     next(err);
   }
 });
 
-// ── Error handler ─────────────────────────────────────────────────────────────
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("[server] unhandled error:", err?.message ?? err);
+  console.error("[server] error:", err?.message ?? err);
   if (!res.headersSent) {
-    res.status(500).json({ error: "Internal server error. Check server logs for details." });
+    res.status(500).json({ error: "Something went wrong. Check logs for details." });
   }
 });
 
-// ── Observability: persist trace to file + DB ─────────────────────────────────
 async function persistTrace(
   ctx: TraceContext,
   latencyMs: number,
@@ -89,7 +81,7 @@ async function persistTrace(
     input: sanitizeInput(t.input),
   }));
 
-  const traceRecord = {
+  const record = {
     request_id: ctx.request_id,
     question: ctx.question,
     tools_called: ctx.tool_calls.map((t) => t.tool),
@@ -101,15 +93,12 @@ async function persistTrace(
     created_at: new Date().toISOString(),
   };
 
-  // Write to jsonl trace file.
   try {
-    const tracePath = join(LOGS_DIR, `trace-${ctx.request_id}.jsonl`);
-    appendFileSync(tracePath, JSON.stringify(traceRecord) + "\n");
+    appendFileSync(join(LOGS_DIR, `trace-${ctx.request_id}.jsonl`), JSON.stringify(record) + "\n");
   } catch {
-    // Non-fatal; don't let logging failure crash the response.
+    // non-fatal
   }
 
-  // Write to DB run_logs (also non-fatal).
   try {
     await query(
       `INSERT INTO run_logs (request_id, question, tools_called, tool_inputs, tables_read, latency_ms, status, error)
@@ -118,7 +107,7 @@ async function persistTrace(
       [
         ctx.request_id,
         ctx.question,
-        JSON.stringify(ctx.tool_calls.map((t) => t.tool)),
+        JSON.stringify(record.tools_called),
         JSON.stringify(sanitizedInputs),
         tablesRead,
         latencyMs,
@@ -127,31 +116,22 @@ async function persistTrace(
       ]
     );
   } catch {
-    // Non-fatal.
+    // non-fatal
   }
 
-  // Console log (sanitized — never secrets).
-  console.log(
-    `[${status.toUpperCase()}] ${ctx.request_id} | ${latencyMs}ms | tools: [${traceRecord.tools_called.join(", ")}] | q: "${ctx.question.slice(0, 80)}"`
-  );
-  if (error) console.error(`[ERROR] ${ctx.request_id}: ${error}`);
+  console.log(`[${status}] ${ctx.request_id} | ${latencyMs}ms | tools: [${record.tools_called.join(", ")}] | "${ctx.question.slice(0, 80)}"`);
+  if (error) console.error(`[error] ${ctx.request_id}: ${error}`);
 }
 
-/** Strip any key that looks like a secret from tool inputs before logging. */
 function sanitizeInput(input: any): any {
   if (!input || typeof input !== "object") return input;
-  const BLOCKED = /key|token|secret|password|auth|credential/i;
-  return Object.fromEntries(
-    Object.entries(input).filter(([k]) => !BLOCKED.test(k))
-  );
+  const blocked = /key|token|secret|password|auth|credential/i;
+  return Object.fromEntries(Object.entries(input).filter(([k]) => !blocked.test(k)));
 }
 
-// ── Start ─────────────────────────────────────────────────────────────────────
 const server = createServer(app);
 server.listen(PORT, () => {
-  console.log(`[server] Tara listening on port ${PORT}`);
-  console.log(`[server] POST http://localhost:${PORT}/ask`);
-  console.log(`[server] GET  http://localhost:${PORT}/health`);
+  console.log(`Tara running on port ${PORT}`);
 });
 
 export default app;

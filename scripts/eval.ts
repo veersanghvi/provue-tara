@@ -1,5 +1,5 @@
 /**
- * Eval suite — sends questions to the local /ask endpoint and asserts that
+ * Eval suite - sends questions to the local /ask endpoint and asserts that
  * expected facts/numbers appear in the natural-language answer.
  *
  * Each expected value is computed live from the database via SQL so the eval

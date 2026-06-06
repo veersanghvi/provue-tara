@@ -1,5 +1,5 @@
 /**
- * Deterministic smoke test — verifies tool correctness by comparing tool
+ * Deterministic smoke test - verifies tool correctness by comparing tool
  * output against direct SQL queries. No LLM required.
  *
  * Run: npx tsx scripts/smoke.ts
@@ -47,7 +47,7 @@ async function checkBool(label: string, got: boolean, expected: boolean) {
 async function main() {
   console.log("=== Smoke test (sample_a must be loaded) ===\n");
 
-  // ── 1. Food spending in March 2025 (net, after refunds, excl transfers) ─────
+  // 1. Food spending in March 2025 (net, after refunds, excl transfers) ─────
   console.log("1. Food spending March 2025 (net)");
   const [sqlFood] = await query<{ net: number }>(
     `SELECT COALESCE(SUM(amount),0)::float8 AS net FROM transactions
@@ -60,7 +60,7 @@ async function main() {
   });
   await check("food net spend March 2025", toolFood.summary.net_spend, sqlFood.net);
 
-  // ── 2. Biggest expense (single transaction, descending by amount) ──────────
+  // 2. Biggest expense (single transaction, descending by amount) ──────────
   console.log("2. Biggest single expense");
   const [sqlBig] = await query<{ amount: number }>(
     `SELECT amount::float8 FROM transactions WHERE is_transfer=FALSE ORDER BY amount DESC LIMIT 1`
@@ -71,7 +71,7 @@ async function main() {
   });
   await check("biggest expense amount", toolBig.transactions?.[0]?.amount, sqlBig.amount);
 
-  // ── 3. Swiggy total spend (all alias variants) ────────────────────────────
+  // 3. Swiggy total spend (all alias variants)─────────────────
   console.log("3. Swiggy total (all aliases)");
   const [sqlSwiggy] = await query<{ net: number }>(
     `SELECT COALESCE(SUM(amount),0)::float8 AS net FROM transactions
@@ -80,7 +80,7 @@ async function main() {
   const toolSwiggy = await runQueryTransactions({ filters: { merchant: "Swiggy" } });
   await check("swiggy net spend", toolSwiggy.summary.net_spend, sqlSwiggy.net);
 
-  // ── 4. Transfers excluded by default ─────────────────────────────────────
+  // 4. Transfers excluded by default──────────────────────────
   console.log("4. Transfers excluded from overall spend");
   const [sqlTransferTotal] = await query<{ total_with: number; total_without: number }>(
     `SELECT SUM(amount)::float8 AS total_with,
@@ -95,7 +95,7 @@ async function main() {
     sqlTransferTotal.total_without
   );
 
-  // ── 5. Top category by net spend ──────────────────────────────────────────
+  // 5. Top category by net spend───────────────────────────────
   console.log("5. Top category by net spend");
   const [sqlTopCat] = await query<{ category: string; net: number }>(
     `SELECT category, SUM(amount)::float8 AS net FROM transactions
@@ -107,19 +107,19 @@ async function main() {
   });
   await check("top category net spend", toolCats.groups?.[0]?.net_spend, sqlTopCat.net);
 
-  // ── 6. No-data case ───────────────────────────────────────────────────────
+  // 6. No-data case────────────────────────────────────────────
   console.log("6. No-data: rent in April 2025");
   const toolNoData = await runQueryTransactions({
     filters: { category: "rent", date_from: "2025-04-01", date_to: "2025-04-30" },
   });
   await checkBool("no_data flag set", toolNoData.no_data === true, true);
 
-  // ── 7. Recurring subscriptions detected ───────────────────────────────────
+  // 7. Recurring subscriptions detected────────────────────────
   console.log("7. Recurring subscriptions (>=3 occurrences)");
   const toolRecurring = await runDetectRecurring({ min_occurrences: 3 });
   await checkBool("at least 1 recurring merchant found", toolRecurring.count > 0, true);
 
-  // ── 8. Fund return — Saffron Bluechip 2024-01-01 to 2025-01-01 ───────────
+  // 8. Fund return - Saffron Bluechip 2024-01-01 to 2025-01-01
   console.log("8. Fund return: Saffron Bluechip 2024-01-01 to 2025-01-01");
   const [navStart] = await query<{ nav: number }>(
     `SELECT nav::float8 FROM fund_nav WHERE fund_id='fund_bluechip' AND nav_date<='2024-01-01'
@@ -145,7 +145,7 @@ async function main() {
     console.log("  ⚠ skipped (no NAV data for fund_bluechip in range)");
   }
 
-  // ── 9. All-fund ranking — best fund should have highest return ────────────
+  // 9. All-fund ranking - best fund should have highest return─
   console.log("9. All-fund ranking");
   const toolAllFunds = await runFundReturn({ all: true, date_from: "2024-01-01", date_to: "2025-01-01" });
   const fundsArr: any[] = toolAllFunds.funds ?? [];
@@ -158,7 +158,7 @@ async function main() {
     console.log("  ⚠ skipped (fewer than 2 funds with data)");
   }
 
-  // ── 10. Holding return for one fund ────────────────────────────────────────
+  // 10. Holding return for one fund─────────────────────────────
   console.log("10. Holding return for fund_bluechip");
   const [holdingRow] = await query<{
     units: number; purchase_nav: number; latest_nav: number;
@@ -178,7 +178,7 @@ async function main() {
     console.log("  ⚠ skipped (no fund_bluechip holding in sample_a)");
   }
 
-  // ── 11. Portfolio aggregate ────────────────────────────────────────────────
+  // 11. Portfolio aggregate─────────────────────────────────────
   console.log("11. Portfolio aggregate");
   const toolPortfolio = await runHoldingReturn({});
   const port = (toolPortfolio as any).portfolio;
@@ -187,7 +187,7 @@ async function main() {
   );
   await check("portfolio total cost", port.total_cost_inr, sqlPortfolio.cost);
 
-  // ── 12. Month-over-month food comparison ──────────────────────────────────
+  // 12. Month-over-month food comparison───────────────────────
   console.log("12. Month-over-month food spend (Feb vs Mar 2025)");
   const toolFeb = await runQueryTransactions({ filters: { category: "food", month: "2025-02" } });
   const toolMar = await runQueryTransactions({ filters: { category: "food", month: "2025-03" } });
@@ -202,7 +202,7 @@ async function main() {
   await check("Feb food spend matches SQL", toolFeb.summary.net_spend, sqlFeb.net);
   await check("Mar food spend matches SQL", toolMar.summary.net_spend, sqlMar.net);
 
-  // ── Summary ───────────────────────────────────────────────────────────────
+  // Summary────────────────────────────────────────────────────
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
   await closePool();
   if (failed > 0) process.exit(1);
